@@ -1,0 +1,15 @@
+[Unit]
+Description=AI Learning Companion Backend Service
+After=network.target
+
+[Service]
+User=abed
+WorkingDirectory=/webapps/ai-learning-companion/AI-Powered-Learning-Companion/backend
+Environment="PYTHONPATH=/webapps/ai-learning-companion/AI-Powered-Learning-Companion/backend"
+Environment="FIREBASE_SERVICE_ACCOUNT_PATH=/webapps/ai-learning-companion/AI-Powered-Learning-Companion/backend/firebase-service-account.json"
+ExecStart=/webapps/ai-learning-companion/AI-Powered-Learning-Companion/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8001
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

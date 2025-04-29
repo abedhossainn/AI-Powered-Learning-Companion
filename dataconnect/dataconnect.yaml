@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "ai-powered-learning-companion"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "ai-powered-learning-companion-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
