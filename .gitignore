@@ -64,3 +64,4 @@ frontend/build/
 # Temporary files
 tmp/
 temp/backend/firebase-service-account.json
+backend/firebase-service-account.json
