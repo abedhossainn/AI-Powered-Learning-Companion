@@ -65,3 +65,16 @@ frontend/build/
 tmp/
 temp/backend/firebase-service-account.json
 backend/firebase-service-account.json
+
+# PowerShell setup scripts
+*.ps1
+create_admin_user.ps1
+create_user.ps1
+create_user_curl.ps1
+register_user.ps1
+
+# Other unnecessary files
+bfg.jar
+replacements.txt
+cloudflare-tunnel.service
+cloudflared-config.yml
