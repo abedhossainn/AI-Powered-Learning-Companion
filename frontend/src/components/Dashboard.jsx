@@ -336,41 +336,47 @@ function Dashboard() {
                       'border-gray-200'
                     }`}
                   >
-                    <p className="font-medium mb-4">{`${index + 1}. ${question.text}`}</p>
+                    <p className="font-medium mb-4">{question.text}</p>
                     
-                    <div className="space-y-2 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       {question.options.map((option, optIndex) => {
-                        const optionLetter = option.charAt(0);
-                        const isUserSelection = userAnswer === optionLetter;
-                        const isCorrectAnswer = question.correct_answer.charAt(0) === optionLetter;
+                        // Check if the option is a valid string
+                        const optionText = typeof option === 'string' ? cleanOptionText(option) : `Option ${optIndex+1}`;
+                        const optionLabels = ['A', 'B', 'C', 'D'];
+                        const isSelected = userAnswer === optionLabels[optIndex];
+                        const isCorrect = quizSubmitted && option === question.correct_answer;
                         
                         return (
                           <div 
-                            key={optIndex} 
-                            className={`p-3 rounded-md border cursor-pointer ${
-                              !quizSubmitted && isUserSelection ? 'border-indigo-400 bg-indigo-50' :
-                              quizSubmitted && isCorrectAnswer ? 'border-green-400 bg-green-50' :
-                              quizSubmitted && isUserSelection ? 'border-red-400 bg-red-50' :
-                              'border-gray-200 hover:border-indigo-300'
-                            }`}
-                            onClick={() => handleAnswerSelect(index, option)}
+                            key={optIndex}
+                            onClick={() => !quizSubmitted && handleAnswerSelect(index, optionLabels[optIndex])}
+                            className={`
+                              border rounded-lg p-4 cursor-pointer transition-all
+                              ${quizSubmitted && isCorrect ? 'border-green-500 bg-green-50' : ''}
+                              ${quizSubmitted && isSelected && !isCorrect ? 'border-red-500 bg-red-50' : ''}
+                              ${!quizSubmitted && isSelected ? 'border-indigo-500 bg-indigo-50' : ''}
+                              ${!quizSubmitted && !isSelected ? 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30' : ''}
+                            `}
                           >
-                            <div className="flex items-center">
-                              <div className={`h-5 w-5 mr-3 flex items-center justify-center rounded-full border ${
-                                !quizSubmitted && isUserSelection ? 'border-indigo-600 bg-indigo-600 text-white' :
-                                quizSubmitted && isCorrectAnswer ? 'border-green-600 bg-green-600 text-white' :
-                                quizSubmitted && isUserSelection ? 'border-red-600 bg-red-600 text-white' :
-                                'border-gray-400'
-                              }`}>
-                                <span className="text-sm">
-                                  {optionLetter}
+                            <div className="flex items-start">
+                              <div className={`
+                                flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 font-medium text-sm
+                                ${quizSubmitted && isCorrect ? 'bg-green-600 text-white' : ''}
+                                ${quizSubmitted && isSelected && !isCorrect ? 'bg-red-600 text-white' : ''}
+                                ${!quizSubmitted && isSelected ? 'bg-indigo-600 text-white' : ''}
+                                ${!quizSubmitted && !isSelected ? 'bg-gray-100 text-gray-700' : ''}
+                              `}>
+                                {optionLabels[optIndex]}
+                              </div>
+                              <div className="flex-1">
+                                <span className={`block w-full cursor-pointer text-sm
+                                  ${quizSubmitted && isCorrect ? 'text-green-700 font-medium' : ''}
+                                  ${quizSubmitted && isSelected && !isCorrect ? 'text-red-700' : ''}
+                                  ${!quizSubmitted ? 'text-gray-700' : ''}
+                                `}>
+                                  {optionText || `Option ${optIndex+1}`}
                                 </span>
                               </div>
-                              <span className={`${
-                                quizSubmitted && isCorrectAnswer ? 'font-medium' : ''
-                              }`}>
-                                {option.substring(option.indexOf(')') + 1).trim()}
-                              </span>
                             </div>
                           </div>
                         );
@@ -452,6 +458,22 @@ function Dashboard() {
       default:
         return null;
     }
+  };
+
+  const cleanOptionText = (option) => {
+    // If option is not a string, return empty string
+    if (typeof option !== 'string') {
+      return '';
+    }
+    
+    // Check if option contains newlines (which happens when letter and text are separated)
+    if (option.includes('\n')) {
+      // Get everything after the first newline
+      return option.split('\n').slice(1).join('\n').trim();
+    }
+    
+    // Remove any leading alphanumeric characters followed by a delimiter and space
+    return option.replace(/^[A-Za-z0-9]+[)\.:\-]?\s*/, '').trim();
   };
 
   return (

@@ -29,6 +29,23 @@ function ContentGenerator() {
     }));
   };
   
+  // Function to clean option text by removing any prefixes
+  const cleanOptionText = (option) => {
+    // If option is not a string, return empty string
+    if (typeof option !== 'string') {
+      return '';
+    }
+    
+    // Check if option contains newlines (which happens when letter and text are separated)
+    if (option.includes('\n')) {
+      // Get everything after the first newline
+      return option.split('\n').slice(1).join('\n').trim();
+    }
+    
+    // Remove any leading alphanumeric characters followed by a delimiter and space
+    return option.replace(/^[A-Za-z0-9]+[)\.:\-]?\s*/, '').trim();
+  };
+  
   // Fetch available topics
   useEffect(() => {
     const fetchTopics = async () => {
@@ -214,17 +231,42 @@ function ContentGenerator() {
               {generatedContent.data.map((question, index) => (
                 <div key={index} className="border-l-4 border-indigo-500 pl-4">
                   <p className="font-medium mb-2">{question.text}</p>
-                  <ul className="space-y-1 mb-2">
-                    {question.options.map((option, optIndex) => (
-                      <li key={optIndex} className={option.startsWith(question.correct_answer) ? "font-medium text-green-600" : ""}>
-                        {option}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {question.options.map((option, optIndex) => {
+                      const optionText = cleanOptionText(option);
+                      const optionLabels = ['A', 'B', 'C', 'D'];
+                      const isCorrect = option.startsWith(question.correct_answer);
+                      
+                      return (
+                        <div 
+                          key={optIndex} 
+                          className={`
+                            border rounded-lg p-4 transition-all
+                            ${isCorrect ? 'border-green-500 bg-green-50' : 'border-gray-200'}
+                          `}
+                        >
+                          <div className="flex items-start">
+                            <div className={`
+                              flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 font-medium text-sm
+                              ${isCorrect ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}
+                            `}>
+                              {optionLabels[optIndex]}
+                            </div>
+                            <div className="flex-1 break-words">
+                              <span className={`block text-sm ${isCorrect ? "text-green-700 font-medium" : "text-gray-700"}`}>
+                                {optionText}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                   {question.explanation && (
-                    <p className="text-sm text-gray-600 italic">
-                      Explanation: {question.explanation}
-                    </p>
+                    <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-md">
+                      <h5 className="text-sm font-semibold text-indigo-800 mb-1">Explanation:</h5>
+                      <p className="text-sm text-indigo-700">{question.explanation}</p>
+                    </div>
                   )}
                 </div>
               ))}

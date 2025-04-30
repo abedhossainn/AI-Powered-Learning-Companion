@@ -167,7 +167,7 @@ def get_quiz_detail(
             QuestionResponse(
                 id=q.id,
                 text=q.text,
-                options=q.options,
+                options=[opt.lstrip('1234567890.)- ') for opt in q.options],  # Clean prefixes
                 correct_answer=q.correct_answer,
                 explanation=q.explanation
             ) for q in ordered_questions

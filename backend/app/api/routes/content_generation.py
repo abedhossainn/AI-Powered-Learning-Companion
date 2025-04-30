@@ -251,20 +251,38 @@ Create {request.num_questions} multiple-choice questions based on the following 
 For each question:
 1. The question should test understanding of concepts from the context
 2. Create 4 options with only one being correct
-3. Provide a brief explanation for the correct answer
+3. CRITICAL: Each option MUST contain full, meaningful text (not just a single word)
+4. IMPORTANT: Do NOT use "Option 1", "Option 2" or similar as option text
+5. Each option should be a clear, complete statement or answer
+6. Do NOT include A, B, C, D or any numbering as part of the option text
+7. Each option should be a simple string without internal newlines or formatting
+8. Provide a brief explanation for the correct answer
+
+EXAMPLE OF GOOD OPTIONS FORMAT:
+"options": [
+  "The result is 19",
+  "The result is 21",
+  "The result is 13",
+  "The result is 15"
+],
 
 Return the quiz questions in the following JSON format:
 [
   {{ 
     "text": "Question text here?",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correct_answer": "Option A",
+    "options": ["Complete option text", "Complete option text", "Complete option text", "Complete option text"],
+    "correct_answer": "The exact text of the correct option",
     "explanation": "Brief explanation of why this is correct"
   }},
   // more questions...
 ]
 
-IMPORTANT: Return only the JSON array without any markdown formatting or code blocks.
+IMPORTANT:
+- Return only the JSON array
+- DO NOT include any markdown formatting or code blocks
+- DO NOT add prefixes like "Option 1", "Option 2", "A:", "B:", "1)", "2)" to the options
+- DO NOT include any numbering or lettering with the options
+- DO NOT format options with internal newlines
 """
         
         # Call AI API for question generation
@@ -352,7 +370,7 @@ IMPORTANT: Return only the JSON array without any markdown formatting or code bl
                     detail="Could not find questions in AI response"
                 )
                 
-            # Validate question format
+            # Validate question format and clean options
             for question in questions:
                 if not isinstance(question, dict):
                     continue
@@ -361,6 +379,36 @@ IMPORTANT: Return only the JSON array without any markdown formatting or code bl
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail="Questions in unexpected format"
                     )
+                
+                # Clean up any option prefixes that might still be present
+                if isinstance(question["options"], list):
+                    # Regular expression pattern to match common option prefixes
+                    import re
+                    prefix_pattern = re.compile(r'^(Option\s*\d+[:.)\s-]*|[A-D][:.)\s-]*|[0-9]+[:.)\s-]*)', re.IGNORECASE)
+                    
+                    # Clean each option and ensure none are empty
+                    for i in range(len(question["options"])):
+                        if not isinstance(question["options"][i], str) or not question["options"][i].strip():
+                            # If empty or not a string, generate a default placeholder
+                            question["options"][i] = f"Answer option {i+1}"
+                        else:
+                            # Remove any prefixes like "Option 1:", "A.", "1)", etc.
+                            question["options"][i] = prefix_pattern.sub('', question["options"][i]).strip()
+                            
+                            # Also remove any newlines that might be in the option
+                            question["options"][i] = question["options"][i].replace('\n', ' ').strip()
+                            
+                            # If after cleaning it's empty, use a default
+                            if not question["options"][i]:
+                                question["options"][i] = f"Answer option {i+1}"
+                    
+                    # Also clean the correct answer
+                    if isinstance(question["correct_answer"], str):
+                        question["correct_answer"] = prefix_pattern.sub('', question["correct_answer"]).strip()
+                        question["correct_answer"] = question["correct_answer"].replace('\n', ' ').strip()
+                        # If the correct answer is empty after cleaning, use the first option as default
+                        if not question["correct_answer"] and question["options"]:
+                            question["correct_answer"] = question["options"][0]
                 
             # Store in database if a topic is provided
             if request.topic_id:

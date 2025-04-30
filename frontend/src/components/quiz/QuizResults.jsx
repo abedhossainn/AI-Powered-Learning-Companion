@@ -125,6 +125,14 @@ function QuizResults() {
     return isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50';
   };
 
+  // Function to format an answer without re-adding numbering
+  const formatAnswer = (answer) => {
+    if (!answer) return '';
+    
+    // Just clean the prefix without re-adding it
+    return answer.replace(/^[A-Za-z0-9][\s\)\.\:\-]+\s*/, '').trim();
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen">
       {/* Header */}
@@ -257,6 +265,10 @@ function QuizResults() {
                     const correctAnswer = isPracticeQuestion ? question.correct_answer : question.correct_answer;
                     const explanation = question.explanation;
                     
+                    // Format answers with consistent numbering
+                    const formattedUserAnswer = formatAnswer(userAnswer);
+                    const formattedCorrectAnswer = formatAnswer(correctAnswer);
+                    
                     return (
                       <div 
                         key={question.question_id || `question-${index}`}
@@ -281,14 +293,14 @@ function QuizResults() {
                           <div className={`p-2 border rounded ${getAnswerColorClass(isCorrect)}`}>
                             <p className="text-sm font-medium">Your Answer:</p>
                             <p className={isCorrect ? 'text-green-700' : 'text-red-700'}>
-                              {userAnswer}
+                              {formattedUserAnswer}
                             </p>
                           </div>
                           
                           {!isCorrect && (
                             <div className="p-2 border rounded border-green-200 bg-green-50">
                               <p className="text-sm font-medium">Correct Answer:</p>
-                              <p className="text-green-700">{correctAnswer}</p>
+                              <p className="text-green-700">{formattedCorrectAnswer}</p>
                             </div>
                           )}
                           

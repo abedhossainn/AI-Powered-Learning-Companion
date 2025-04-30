@@ -70,6 +70,9 @@ api.interceptors.request.use(
 // Response interceptor for handling errors
 api.interceptors.response.use(
   (response) => {
+    // Log the response payload for debugging
+    console.log('Response payload from /generate/questions:', response.data);
+
     return response;
   },
   (error) => {

@@ -12,7 +12,6 @@ function QuizAttempt() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -34,9 +33,6 @@ function QuizAttempt() {
         }
         
         setQuiz(response.data);
-        // Set time limit (10 min default or 1 min per question, whichever is greater)
-        const timeLimit = Math.max(10 * 60, response.data.questions.length * 60);
-        setTimeRemaining(timeLimit);
       } catch (err) {
         console.error('Error fetching quiz:', err);
         setError('Failed to load quiz. Please try again later.');
@@ -47,24 +43,6 @@ function QuizAttempt() {
     
     fetchQuiz();
   }, [quizId]);
-
-  // Timer countdown
-  useEffect(() => {
-    if (!timeRemaining || timeRemaining <= 0) return;
-    
-    const timer = setInterval(() => {
-      setTimeRemaining(prevTime => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          handleSubmitQuiz();
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [timeRemaining]);
 
   const handleAnswerSelect = (questionId, answer) => {
     setSelectedAnswers(prev => ({
@@ -106,11 +84,21 @@ function QuizAttempt() {
     }
   };
 
-  // Format time to MM:SS
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  // Update cleanOptionText implementation to handle different option formats
+  const cleanOptionText = (option) => {
+    // If option is not a string, return empty string
+    if (typeof option !== 'string') {
+      return '';
+    }
+    
+    // Check if option contains newlines (which happens when letter and text are separated)
+    if (option.includes('\n')) {
+      // Get everything after the first newline
+      return option.split('\n').slice(1).join('\n').trim();
+    }
+    
+    // Remove any leading alphanumeric characters followed by a delimiter and space
+    return option.replace(/^[A-Za-z0-9]+[)\.:\-]?\s*/, '').trim();
   };
 
   return (
@@ -154,15 +142,8 @@ function QuizAttempt() {
             <div className="bg-white shadow rounded-lg p-6">
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">{quiz.title}</h1>
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-500">
-                    Question {currentQuestionIndex + 1} of {quiz.questions.length}
-                  </div>
-                  {timeRemaining !== null && (
-                    <div className={`font-mono text-lg ${timeRemaining < 60 ? 'text-red-600' : 'text-gray-700'}`}>
-                      {formatTime(timeRemaining)}
-                    </div>
-                  )}
+                <div className="text-sm text-gray-500">
+                  Question {currentQuestionIndex + 1} of {quiz.questions.length}
                 </div>
               </div>
               
@@ -179,29 +160,34 @@ function QuizAttempt() {
                 <div className="mb-6">
                   <h2 className="text-lg font-medium mb-4">{quiz.questions[currentQuestionIndex].text}</h2>
                   
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {quiz.questions[currentQuestionIndex].options.map((option, index) => {
-                      const optionValue = option.substring(0, 2); // Extract "A)", "B)", etc.
-                      const optionLetter = optionValue.charAt(0);
-                      const isSelected = selectedAnswers[quiz.questions[currentQuestionIndex].id] === optionLetter;
-                      const uniqueId = `option-${currentQuestionIndex}-${index}`;
+                      const optionText = typeof option === 'string' ? cleanOptionText(option) : `Option ${index+1}`;
+                      const optionLabels = ['A', 'B', 'C', 'D'];
+                      const isSelected = selectedAnswers[quiz.questions[currentQuestionIndex].id] === option;
                       
                       return (
-                        <div key={index} 
-                             className={`flex items-center p-2 rounded cursor-pointer ${isSelected ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-gray-50'}`}
-                             onClick={() => handleAnswerSelect(quiz.questions[currentQuestionIndex].id, optionLetter)}>
-                          <input
-                            type="radio"
-                            id={uniqueId}
-                            name={`question-${quiz.questions[currentQuestionIndex].id}`}
-                            value={optionLetter}
-                            checked={isSelected}
-                            onChange={() => {}} // Empty handler since we're handling click on the div
-                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                          />
-                          <label htmlFor={uniqueId} className="ml-2 block w-full cursor-pointer text-sm text-gray-700">
-                            {option}
-                          </label>
+                        <div 
+                          key={index} 
+                          onClick={() => handleAnswerSelect(quiz.questions[currentQuestionIndex].id, option)}
+                          className={`
+                            border rounded-lg p-4 cursor-pointer transition-all 
+                            ${isSelected ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30'}
+                          `}
+                        >
+                          <div className="flex items-start">
+                            <div className={`
+                              flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 font-medium text-sm
+                              ${isSelected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}
+                            `}>
+                              {optionLabels[index]}
+                            </div>
+                            <div className="flex-1">
+                              <span className="block w-full cursor-pointer text-sm text-gray-700">
+                                {optionText || `Option ${index+1}`}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
@@ -267,7 +253,6 @@ function QuizAttempt() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
-                    {index + 1}
                   </button>
                 ))}
               </div>
