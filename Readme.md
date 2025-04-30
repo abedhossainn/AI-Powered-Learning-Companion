@@ -145,6 +145,7 @@ After setting up the project:
    - Or use social login options if configured in your Firebase project
 
 2. **Access the Application:**
+   - Live demo: https://ailearning.cbtbags.com/
    - Frontend: http://localhost:5173 (or the port specified by your Vite configuration)
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/api/docs
